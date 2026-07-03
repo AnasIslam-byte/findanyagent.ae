@@ -1,0 +1,9 @@
+{
+  "name": "findanyagent-vercel",
+  "version": "1.0.0",
+  "private": true,
+  "description": "FindAnyAgent clone deployed on Vercel with serverless API + Postgres database",
+  "dependencies": {
+    "@neondatabase/serverless": "^0.10.4"
+  }
+}

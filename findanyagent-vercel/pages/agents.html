@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>All Agents & Agencies — FindAnyAgent (Local Clone)</title>
+<link rel="icon" type="image/svg+xml" href="/images/logo.svg" />
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+<header id="site-header" class="site-header"></header>
+
+<section style="padding-bottom: 0;">
+  <div class="container">
+    <div class="breadcrumb"><a href="/index.html">Home</a> / All Agents</div>
+    <div class="section-title" style="text-align:left; margin-bottom:24px;">
+      <h2 id="page-heading">All Agents & Agencies</h2>
+      <p id="result-count"></p>
+    </div>
+
+    <div class="filters-bar">
+      <input type="text" id="filter-search" placeholder="Search by name or keyword..." />
+      <select id="filter-category">
+        <option value="">All Categories</option>
+      </select>
+      <select id="filter-city">
+        <option value="">All Cities</option>
+      </select>
+      <label style="display:flex; align-items:center; gap:6px; font-size:14px;">
+        <input type="checkbox" id="filter-verified" style="width:auto;" /> Verified only
+      </label>
+      <button class="btn btn-primary" id="filter-apply">Apply Filters</button>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top: 0;">
+  <div class="container">
+    <div class="agent-grid" id="agent-results">
+      <p style="text-align:center; color:#667085;">Loading agents...</p>
+    </div>
+  </div>
+</section>
+
+<footer id="site-footer" class="site-footer"></footer>
+
+<script src="/js/common.js"></script>
+<script>
+  const params = new URLSearchParams(window.location.search);
+
+  async function populateFilters() {
+    const categories = await apiGet("/categories");
+    const catSelect = document.getElementById("filter-category");
+    categories.forEach(c => {
+      const opt = document.createElement("option");
+      opt.value = c.slug;
+      opt.textContent = c.name;
+      catSelect.appendChild(opt);
+    });
+
+    const cities = await apiGet("/agents/cities");
+    const citySelect = document.getElementById("filter-city");
+    cities.forEach(city => {
+      const opt = document.createElement("option");
+      opt.value = city;
+      opt.textContent = city;
+      citySelect.appendChild(opt);
+    });
+
+    // Prefill from URL params
+    if (params.get("category")) catSelect.value = params.get("category");
+    if (params.get("city")) citySelect.value = params.get("city");
+    if (params.get("search")) document.getElementById("filter-search").value = params.get("search");
+
+    if (params.get("category")) {
+      const cat = categories.find(c => c.slug === params.get("category"));
+      if (cat) document.getElementById("page-heading").textContent = cat.name;
+    }
+  }
+
+  async function loadAgents() {
+    const resultsEl = document.getElementById("agent-results");
+    const search = document.getElementById("filter-search").value.trim();
+    const category = document.getElementById("filter-category").value;
+    const city = document.getElementById("filter-city").value;
+    const verified = document.getElementById("filter-verified").checked;
+
+    const qp = new URLSearchParams();
+    if (search) qp.set("search", search);
+    if (category) qp.set("category", category);
+    if (city) qp.set("city", city);
+    if (verified) qp.set("verified", "1");
+
+    resultsEl.innerHTML = `<p style="text-align:center; color:#667085;">Loading agents...</p>`;
+
+    try {
+      const agents = await apiGet(`/agents?${qp.toString()}`);
+      document.getElementById("result-count").textContent = `${agents.length} result(s) found`;
+
+      if (agents.length === 0) {
+        resultsEl.innerHTML = `<div class="empty-state">No agents match your filters. Try broadening your search.</div>`;
+        return;
+      }
+      resultsEl.innerHTML = agents.map(agentCardHTML).join("");
+    } catch (e) {
+      resultsEl.innerHTML = `<p style="text-align:center;color:#c0392b;">Could not load agents. Is the backend server running?</p>`;
+    }
+  }
+
+  document.getElementById("filter-apply").addEventListener("click", loadAgents);
+  document.getElementById("filter-search").addEventListener("keypress", (e) => {
+    if (e.key === "Enter") loadAgents();
+  });
+
+  (async () => {
+    await populateFilters();
+    await loadAgents();
+  })();
+</script>
+</body>
+</html>

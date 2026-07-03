@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Contact Us — FindAnyAgent (Local Clone)</title>
+<link rel="icon" type="image/svg+xml" href="/images/logo.svg" />
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+<header id="site-header" class="site-header"></header>
+
+<section>
+  <div class="container">
+    <div class="breadcrumb"><a href="/index.html">Home</a> / Contact</div>
+    <div class="section-title">
+      <h2>Get in Touch</h2>
+      <p>Have a question, or want to be listed as an agent? Send us a message.</p>
+    </div>
+
+    <form class="contact-form" id="contact-form">
+      <label>Full Name *</label>
+      <input type="text" id="c-name" required />
+
+      <label>Email *</label>
+      <input type="email" id="c-email" required />
+
+      <label>Phone</label>
+      <input type="tel" id="c-phone" />
+
+      <label>Message</label>
+      <textarea id="c-message" rows="5" placeholder="How can we help?"></textarea>
+
+      <div style="margin-top: 20px;">
+        <button type="submit" class="btn btn-gold">Send Message</button>
+      </div>
+      <div class="form-msg" id="form-msg"></div>
+    </form>
+  </div>
+</section>
+
+<footer id="site-footer" class="site-footer"></footer>
+
+<script src="/js/common.js"></script>
+<script>
+  document.getElementById("contact-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msgEl = document.getElementById("form-msg");
+    msgEl.className = "form-msg";
+    msgEl.textContent = "";
+
+    const payload = {
+      agent_id: null,
+      name: document.getElementById("c-name").value.trim(),
+      email: document.getElementById("c-email").value.trim(),
+      phone: document.getElementById("c-phone").value.trim(),
+      message: document.getElementById("c-message").value.trim(),
+    };
+
+    try {
+      const result = await apiPost("/inquiries", payload);
+      msgEl.className = "form-msg success";
+      msgEl.textContent = result.message || "Message sent successfully!";
+      document.getElementById("contact-form").reset();
+    } catch (err) {
+      msgEl.className = "form-msg error";
+      msgEl.textContent = err.message || "Something went wrong. Please try again.";
+    }
+  });
+</script>
+</body>
+</html>

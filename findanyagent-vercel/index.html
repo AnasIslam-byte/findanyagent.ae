@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FindAnyAgent (Local Clone) — Find Verified Agents & Agencies in UAE</title>
+<link rel="icon" type="image/svg+xml" href="/images/logo.svg" />
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+<header id="site-header" class="site-header"></header>
+
+<section class="hero">
+  <div class="container">
+    <h1>Find Any <span>Agent</span> or Agency in UAE</h1>
+    <p>Discover verified Real Estate agents, Legal consultants, Trade Finance experts, Umrah agencies and more — all in one place.</p>
+    <form class="search-box" id="hero-search-form">
+      <input type="text" id="hero-search-input" placeholder="Search agents, agencies, services..." />
+      <button type="submit">Search</button>
+    </form>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <div class="section-title">
+      <h2>Browse by Category</h2>
+      <p>Choose a category to find verified professionals near you</p>
+    </div>
+    <div class="category-grid" id="category-grid">
+      <p style="text-align:center; color:#667085;">Loading categories...</p>
+    </div>
+  </div>
+</section>
+
+<section style="background:#fff;">
+  <div class="container">
+    <div class="section-title">
+      <h2>Featured Agents & Agencies</h2>
+      <p>Top-rated and verified listings picked for you</p>
+    </div>
+    <div class="agent-grid" id="featured-agents">
+      <p style="text-align:center; color:#667085;">Loading agents...</p>
+    </div>
+    <div style="text-align:center; margin-top: 34px;">
+      <a class="btn btn-gold" href="/pages/agents.html">View All Agents →</a>
+    </div>
+  </div>
+</section>
+
+<footer id="site-footer" class="site-footer"></footer>
+
+<script src="/js/common.js"></script>
+<script>
+  async function loadCategories() {
+    const grid = document.getElementById("category-grid");
+    try {
+      const categories = await apiGet("/categories");
+      grid.innerHTML = categories.map(c => `
+        <a class="category-card" href="/pages/agents.html?category=${c.slug}">
+          <div class="icon">${c.icon}</div>
+          <h3>${c.name}</h3>
+          <p>${c.description || ""}</p>
+          <div class="count">${c.agent_count} listed</div>
+        </a>
+      `).join("");
+    } catch (e) {
+      grid.innerHTML = `<p style="text-align:center;color:#c0392b;">Could not load categories. Is the backend server running?</p>`;
+    }
+  }
+
+  async function loadFeaturedAgents() {
+    const grid = document.getElementById("featured-agents");
+    try {
+      const agents = await apiGet("/agents?verified=1");
+      grid.innerHTML = agents.slice(0, 6).map(agentCardHTML).join("");
+    } catch (e) {
+      grid.innerHTML = `<p style="text-align:center;color:#c0392b;">Could not load agents. Is the backend server running?</p>`;
+    }
+  }
+
+  document.getElementById("hero-search-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const q = document.getElementById("hero-search-input").value.trim();
+    window.location.href = `/pages/agents.html${q ? "?search=" + encodeURIComponent(q) : ""}`;
+  });
+
+  loadCategories();
+  loadFeaturedAgents();
+</script>
+</body>
+</html>

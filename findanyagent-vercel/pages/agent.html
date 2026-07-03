@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Agent Profile — FindAnyAgent (Local Clone)</title>
+<link rel="icon" type="image/svg+xml" href="/images/logo.svg" />
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+<header id="site-header" class="site-header"></header>
+
+<section>
+  <div class="container">
+    <div class="breadcrumb"><a href="/index.html">Home</a> / <a href="/pages/agents.html">All Agents</a> / <span id="crumb-name">Profile</span></div>
+    <div id="agent-detail-wrap">
+      <p style="text-align:center; color:#667085;">Loading profile...</p>
+    </div>
+  </div>
+</section>
+
+<section style="background:#fff;">
+  <div class="container">
+    <div class="section-title">
+      <h2>Send an Inquiry</h2>
+      <p>Contact this agent directly — your message is saved and they'll follow up.</p>
+    </div>
+    <form class="contact-form" id="inquiry-form">
+      <label>Full Name *</label>
+      <input type="text" id="inq-name" required />
+
+      <label>Email *</label>
+      <input type="email" id="inq-email" required />
+
+      <label>Phone</label>
+      <input type="tel" id="inq-phone" />
+
+      <label>Message</label>
+      <textarea id="inq-message" rows="4" placeholder="I'm interested in..."></textarea>
+
+      <div style="margin-top: 20px;">
+        <button type="submit" class="btn btn-gold">Send Inquiry</button>
+      </div>
+      <div class="form-msg" id="form-msg"></div>
+    </form>
+  </div>
+</section>
+
+<footer id="site-footer" class="site-footer"></footer>
+
+<script src="/js/common.js"></script>
+<script>
+  const id = new URLSearchParams(window.location.search).get("id");
+
+  async function loadAgent() {
+    const wrap = document.getElementById("agent-detail-wrap");
+    if (!id) {
+      wrap.innerHTML = `<div class="empty-state">No agent selected.</div>`;
+      return;
+    }
+    try {
+      const agent = await apiGet(`/agents/${id}`);
+      document.getElementById("crumb-name").textContent = agent.name;
+      document.title = `${agent.name} — FindAnyAgent (Local Clone)`;
+
+      const img = agent.image_url || "https://via.placeholder.com/600x400?text=No+Image";
+      const verifiedBadge = agent.verified ? `<span class="verified-badge">✔ Verified</span>` : "";
+
+      wrap.innerHTML = `
+        <div class="agent-detail">
+          <img src="${img}" alt="${agent.name}" />
+          <div class="agent-detail-info">
+            <div class="cat-tag" style="color:#c8952c; font-weight:700; text-transform:uppercase; font-size:12px;">${agent.category_name}</div>
+            <h1>${agent.name} ${verifiedBadge}</h1>
+            <div class="city" style="margin-bottom:14px; color:#667085;">📍 ${agent.city}, UAE</div>
+            <div class="rating-row">
+              <span class="stars">${starString(agent.rating)}</span>
+              <span>${agent.rating} (${agent.reviews_count} reviews)</span>
+            </div>
+            <p style="color:#444; margin: 18px 0;">${agent.description || "No description provided."}</p>
+            <div style="display:flex; flex-direction:column; gap:8px; font-size:14px; margin-bottom:22px;">
+              ${agent.phone ? `<div>📞 ${agent.phone}</div>` : ""}
+              ${agent.email ? `<div>✉️ ${agent.email}</div>` : ""}
+              ${agent.whatsapp ? `<div>💬 WhatsApp: ${agent.whatsapp}</div>` : ""}
+            </div>
+            <a href="#inquiry-form" class="btn btn-primary">Contact This Agent</a>
+          </div>
+        </div>
+      `;
+    } catch (e) {
+      wrap.innerHTML = `<div class="empty-state">Agent not found.</div>`;
+    }
+  }
+
+  document.getElementById("inquiry-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msgEl = document.getElementById("form-msg");
+    msgEl.className = "form-msg";
+    msgEl.textContent = "";
+
+    const payload = {
+      agent_id: id ? Number(id) : null,
+      name: document.getElementById("inq-name").value.trim(),
+      email: document.getElementById("inq-email").value.trim(),
+      phone: document.getElementById("inq-phone").value.trim(),
+      message: document.getElementById("inq-message").value.trim(),
+    };
+
+    try {
+      const result = await apiPost("/inquiries", payload);
+      msgEl.className = "form-msg success";
+      msgEl.textContent = result.message || "Inquiry sent successfully!";
+      document.getElementById("inquiry-form").reset();
+    } catch (err) {
+      msgEl.className = "form-msg error";
+      msgEl.textContent = err.message || "Something went wrong. Please try again.";
+    }
+  });
+
+  loadAgent();
+</script>
+</body>
+</html>

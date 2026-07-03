@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin — FindAnyAgent (Local Clone)</title>
+<link rel="icon" type="image/svg+xml" href="/images/logo.svg" />
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+<header id="site-header" class="site-header"></header>
+
+<section>
+  <div class="container">
+    <div class="section-title" style="text-align:left;">
+      <h2>Admin — Add New Agent/Agency</h2>
+      <p>Simple internal form to add listings directly to the database.</p>
+    </div>
+
+    <form class="contact-form" id="add-agent-form" style="max-width: 700px;">
+      <label>Agency / Agent Name *</label>
+      <input type="text" id="a-name" required />
+
+      <label>Category *</label>
+      <select id="a-category" required></select>
+
+      <label>City *</label>
+      <input type="text" id="a-city" placeholder="e.g. Dubai" required />
+
+      <label>Phone</label>
+      <input type="text" id="a-phone" placeholder="+971-4-0000000" />
+
+      <label>Email</label>
+      <input type="email" id="a-email" />
+
+      <label>WhatsApp</label>
+      <input type="text" id="a-whatsapp" placeholder="+9715xxxxxxxx" />
+
+      <label>Description</label>
+      <textarea id="a-description" rows="3"></textarea>
+
+      <label>Image URL</label>
+      <input type="text" id="a-image" placeholder="https://..." />
+
+      <div style="margin-top: 20px;">
+        <button type="submit" class="btn btn-gold">Add Agent</button>
+      </div>
+      <div class="form-msg" id="form-msg"></div>
+    </form>
+  </div>
+</section>
+
+<section style="background:#fff;">
+  <div class="container">
+    <div class="section-title" style="text-align:left;">
+      <h2>Recent Inquiries</h2>
+      <p>Messages submitted through contact / agent inquiry forms.</p>
+    </div>
+    <div id="inquiries-list">
+      <p style="color:#667085;">Loading inquiries...</p>
+    </div>
+  </div>
+</section>
+
+<footer id="site-footer" class="site-footer"></footer>
+
+<script src="/js/common.js"></script>
+<script>
+  async function loadCategoryOptions() {
+    const select = document.getElementById("a-category");
+    const categories = await apiGet("/categories");
+    select.innerHTML = categories.map(c => `<option value="${c.id}">${c.name}</option>`).join("");
+  }
+
+  async function loadInquiries() {
+    const list = document.getElementById("inquiries-list");
+    try {
+      const inquiries = await apiGet("/inquiries");
+      if (inquiries.length === 0) {
+        list.innerHTML = `<p style="color:#667085;">No inquiries yet.</p>`;
+        return;
+      }
+      list.innerHTML = `
+        <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; background:#fff;">
+          <thead>
+            <tr style="text-align:left; border-bottom:2px solid #e6e9f0;">
+              <th style="padding:10px;">Name</th>
+              <th style="padding:10px;">Email</th>
+              <th style="padding:10px;">Phone</th>
+              <th style="padding:10px;">Agent</th>
+              <th style="padding:10px;">Message</th>
+              <th style="padding:10px;">Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${inquiries.map(i => `
+              <tr style="border-bottom:1px solid #e6e9f0;">
+                <td style="padding:10px;">${i.name}</td>
+                <td style="padding:10px;">${i.email}</td>
+                <td style="padding:10px;">${i.phone || "-"}</td>
+                <td style="padding:10px;">${i.agent_name || "General"}</td>
+                <td style="padding:10px; max-width:260px;">${i.message || "-"}</td>
+                <td style="padding:10px; white-space:nowrap;">${new Date(i.created_at).toLocaleString()}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+        </div>
+      `;
+    } catch (e) {
+      list.innerHTML = `<p style="color:#c0392b;">Could not load inquiries.</p>`;
+    }
+  }
+
+  document.getElementById("add-agent-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msgEl = document.getElementById("form-msg");
+    msgEl.className = "form-msg";
+
+    const payload = {
+      name: document.getElementById("a-name").value.trim(),
+      category_id: Number(document.getElementById("a-category").value),
+      city: document.getElementById("a-city").value.trim(),
+      phone: document.getElementById("a-phone").value.trim(),
+      email: document.getElementById("a-email").value.trim(),
+      whatsapp: document.getElementById("a-whatsapp").value.trim(),
+      description: document.getElementById("a-description").value.trim(),
+      image_url: document.getElementById("a-image").value.trim(),
+    };
+
+    try {
+      await apiPost("/agents", payload);
+      msgEl.className = "form-msg success";
+      msgEl.textContent = "Agent added successfully!";
+      document.getElementById("add-agent-form").reset();
+      loadCategoryOptions();
+    } catch (err) {
+      msgEl.className = "form-msg error";
+      msgEl.textContent = err.message || "Something went wrong.";
+    }
+  });
+
+  loadCategoryOptions();
+  loadInquiries();
+</script>
+</body>
+</html>
